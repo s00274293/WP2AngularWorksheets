@@ -7,17 +7,24 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { LoadState, withLoadState } from '../../../../../shared/load-state';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 
 @Component({
   selector: 'app-car-details',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './car-details.html',
   styleUrl: './car-details.css',
 })
 export class CarDetails {
 
   private carService = inject(CarService);
+  private readonly router = inject(Router);
+  readonly deleting = signal(false);
+  
+  readonly deleteError = signal<string | null>(null);
+
 
     readonly id = input.required<string>();
 
@@ -31,5 +38,22 @@ export class CarDetails {
     ),
     { initialValue: this.initial },
   );
+
+  deleteCar(car: Car): void {
+  if (!confirm(`Delete ${car.make} ${car.model}?`)) return;
+  this.deleting.set(true);
+  this.deleteError.set(null);
+
+
+
+  this.carService.deleteCar(car._id).subscribe({
+    next: () => this.router.navigate(['/cars']),
+    error: (err: Error) => {
+      this.deleteError.set(err.message);
+      this.deleting.set(false);
+    },
+
+  });
+}
 
 }
